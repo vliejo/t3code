@@ -1870,11 +1870,13 @@ code {
 
 /* Chat markdown rendering */
 
-.chat-markdown > :first-child {
+.chat-markdown > :first-child,
+.chat-markdown > [data-comment-start]:first-child > :first-child {
   margin-top: 0;
 }
 
-.chat-markdown > :last-child {
+.chat-markdown > :last-child,
+.chat-markdown > [data-comment-start]:last-child > :last-child {
   margin-bottom: 0;
 }
 

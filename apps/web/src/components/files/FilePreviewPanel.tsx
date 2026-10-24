@@ -901,6 +901,7 @@ function EditableFileSurface({
 }
 
 function RenderedMarkdownSurface({
+  composerDraftTarget,
   environmentId,
   cwd,
   relativePath,
@@ -911,12 +912,7 @@ function RenderedMarkdownSurface({
   onPendingChange,
 }: Omit<
   EditableFileSurfaceProps,
-  | "resolvedTheme"
-  | "composerDraftTarget"
-  | "revealLine"
-  | "revealRequestId"
-  | "wordWrap"
-  | "onPostRender"
+  "resolvedTheme" | "revealLine" | "revealRequestId" | "wordWrap" | "onPostRender"
 > & {
   threadRef: ScopedThreadRef;
   readOnly: boolean;
@@ -928,6 +924,20 @@ function RenderedMarkdownSurface({
   return (
     <ScrollArea className="min-h-0 flex-1">
       <FileMarkdownPreview
+        composerDraftTarget={composerDraftTarget}
+        onTextChange={
+          readOnly
+            ? undefined
+            : (original, text) => {
+                const current =
+                  getOptimisticProjectFileQueryData(environmentId, cwd, relativePath)?.contents ??
+                  contents;
+                if (current !== original) return false;
+                setProjectFileQueryData(environmentId, cwd, relativePath, text);
+                changeFileSaveSession(saveTarget, text);
+                return true;
+              }
+        }
         text={contents}
         cwd={cwd}
         relativePath={relativePath}
@@ -1463,13 +1473,14 @@ export default function FilePreviewPanel({
             ) : isMarkdown && renderMarkdown ? (
               <RenderedMarkdownSurface
                 key={relativePath}
+                composerDraftTarget={composerDraftTarget}
                 environmentId={environmentId}
                 cwd={cwd}
                 relativePath={relativePath}
                 threadRef={threadRef}
                 contents={file.data.contents}
                 workspaceMutationId={workspaceMutationId}
-                readOnly={isHostFile || !canWriteFiles}
+                readOnly={isHostFile || !canWriteFiles || file.data.truncated}
                 onPendingChange={onPendingChange}
               />
             ) : tableDelimiter && renderTable ? (

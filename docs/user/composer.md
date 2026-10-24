@@ -312,6 +312,16 @@ them back.
 On mobile, tap a chip to inspect its content. File references open the current file; attached
 files show the copy that was attached to the message.
 
+## Markdown file previews
+
+On web and desktop, open a workspace Markdown file and switch to its rendered view.
+Select text and choose **Add comment** to attach the corresponding source section to your
+message. You can remove the comment from the preview or composer before sending.
+
+For a writable file, choose **Edit text** to change rendered prose, link labels, or table cells,
+then **Save changes** or **Cancel**. Existing formatting and link destinations are preserved.
+Use source mode to change document structure, formatting, or code blocks.
+
 ## Attached files
 
 Select a file chip in your draft or a sent message to preview it. Code and JSON use syntax

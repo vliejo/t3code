@@ -237,6 +237,8 @@ interface ChatMarkdownProps {
   workspaceMutationId?: string | null | undefined;
   onImageExpand?: ((preview: ExpandedImagePreview) => void) | undefined;
   extraRemarkPlugins?: NonNullable<ReactMarkdownOptions["remarkPlugins"]>;
+  extraComponents?: Components;
+  extraRehypePlugins?: NonNullable<ReactMarkdownOptions["rehypePlugins"]>;
   renderContextReference?: ((reference: ChatMarkdownContextReference) => ReactNode) | undefined;
   /** Loads media a source control host keeps behind a credential through the server, which holds
       `cwd`'s; without it a private repository's uploads load unauthenticated and 404. */
@@ -1595,7 +1597,9 @@ function ChatMarkdown({
   inline = false,
   lineBreaks = false,
   parseRawHtml = true,
+  extraComponents,
   extraRemarkPlugins = EMPTY_REMARK_PLUGINS,
+  extraRehypePlugins = EMPTY_REMARK_PLUGINS,
   ...props
 }: ChatMarkdownProps) {
   const {
@@ -1638,13 +1642,18 @@ function ChatMarkdown({
         <ChatMarkdownTextContext value={text}>
           <ReactMarkdown
             remarkPlugins={remarkPlugins}
-            rehypePlugins={
-              parseRawHtml
+            rehypePlugins={[
+              ...(parseRawHtml
                 ? CHAT_MARKDOWN_RENDER_REHYPE_PLUGINS
-                : CHAT_MARKDOWN_LITERAL_HTML_REHYPE_PLUGINS
-            }
+                : CHAT_MARKDOWN_LITERAL_HTML_REHYPE_PLUGINS),
+              ...extraRehypePlugins,
+            ]}
             skipHtml={false}
-            components={CHAT_MARKDOWN_COMPONENTS}
+            components={
+              extraComponents
+                ? { ...CHAT_MARKDOWN_COMPONENTS, ...extraComponents }
+                : CHAT_MARKDOWN_COMPONENTS
+            }
             urlTransform={markdownUrlTransform}
           >
             {text}
