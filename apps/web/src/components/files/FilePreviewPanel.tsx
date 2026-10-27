@@ -44,7 +44,7 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import { mediaFileReference } from "@t3tools/client-runtime/media-reference";
-import { FolderTree, Globe2, WrapTextIcon } from "lucide-react";
+import { FolderTree, Globe2, Pencil, WrapTextIcon } from "lucide-react";
 import { Code2, Eye, Table2 } from "lucide";
 import * as Schema from "effect/Schema";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
@@ -901,6 +901,8 @@ function EditableFileSurface({
 }
 
 function RenderedMarkdownSurface({
+  editing,
+  onEditingChange,
   composerDraftTarget,
   environmentId,
   cwd,
@@ -914,6 +916,8 @@ function RenderedMarkdownSurface({
   EditableFileSurfaceProps,
   "resolvedTheme" | "revealLine" | "revealRequestId" | "wordWrap" | "onPostRender"
 > & {
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
   threadRef: ScopedThreadRef;
   readOnly: boolean;
   workspaceMutationId: string | null;
@@ -924,6 +928,8 @@ function RenderedMarkdownSurface({
   return (
     <ScrollArea className="min-h-0 flex-1">
       <FileMarkdownPreview
+        editing={editing}
+        onEditingChange={onEditingChange}
         composerDraftTarget={composerDraftTarget}
         onTextChange={
           readOnly
@@ -1002,6 +1008,15 @@ export default function FilePreviewPanel({
 }: FilePreviewPanelProps) {
   const relativePath =
     attachment === undefined ? resolveFilePreviewPath(requestedPath, cwd) : requestedPath;
+  const markdownFileKey = JSON.stringify([environmentId, cwd, relativePath]);
+  const [markdownEditor, setMarkdownEditor] = useState({ key: markdownFileKey, editing: false });
+  if (markdownEditor.key !== markdownFileKey) {
+    setMarkdownEditor({ key: markdownFileKey, editing: false });
+  }
+  const editingMarkdown = markdownEditor.key === markdownFileKey && markdownEditor.editing;
+  const setEditingMarkdown = (editing: boolean) => {
+    setMarkdownEditor({ key: markdownFileKey, editing });
+  };
   const draft = typeof composerDraftTarget === "string";
   const { resolvedTheme } = useTheme();
   const wordWrap = useClientSettings((settings) => settings.wordWrap);
@@ -1279,6 +1294,7 @@ export default function FilePreviewPanel({
               label={renderedToggleLabel(renderedMode, rendered)}
               pressed={rendered}
               onPress={() => {
+                setEditingMarkdown(false);
                 const pressed = !rendered;
                 setRenderedPreferred(pressed);
                 setHandledReveal(
@@ -1292,6 +1308,20 @@ export default function FilePreviewPanel({
                 className="size-3.5"
                 icon={rendered ? Code2 : renderedMode === "table" ? Table2 : Eye}
               />
+            </FileSurfaceAction>
+          ) : null}
+          {isMarkdown &&
+          renderMarkdown &&
+          !isHostFile &&
+          canWriteFiles &&
+          file.data &&
+          !file.data.truncated ? (
+            <FileSurfaceAction
+              label="Edit Markdown preview"
+              pressed={editingMarkdown}
+              onPress={() => setEditingMarkdown(true)}
+            >
+              <Pencil className="size-3.5" />
             </FileSurfaceAction>
           ) : null}
           {showsRawText ? (
@@ -1472,6 +1502,8 @@ export default function FilePreviewPanel({
               </Suspense>
             ) : isMarkdown && renderMarkdown ? (
               <RenderedMarkdownSurface
+                editing={editingMarkdown}
+                onEditingChange={setEditingMarkdown}
                 key={relativePath}
                 composerDraftTarget={composerDraftTarget}
                 environmentId={environmentId}

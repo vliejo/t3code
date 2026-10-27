@@ -1871,13 +1871,17 @@ code {
 /* Chat markdown rendering */
 
 .chat-markdown > :first-child,
-.chat-markdown > [data-comment-start]:first-child > :first-child {
+.chat-markdown > [data-comment-start]:first-child > [data-comment-content] > :first-child {
   margin-top: 0;
 }
 
 .chat-markdown > :last-child,
-.chat-markdown > [data-comment-start]:last-child > :last-child {
+.chat-markdown > [data-comment-start]:last-child > [data-comment-content] > :last-child {
   margin-bottom: 0;
+}
+
+.chat-markdown [data-markdown-comments] p {
+  margin: 0;
 }
 
 .chat-markdown p,

@@ -187,6 +187,8 @@ import {
 import { resolveLinkTarget } from "../browser/browserLinkTarget";
 import { PullRequestLinkPreview } from "./pullRequest/PullRequestLinkPreview";
 import { MarkdownCodeBlock, SuspenseShikiCodeBlock } from "./chat/MarkdownCodeBlock";
+import { MermaidEditingContext } from "./chat/MarkdownMermaidEditor";
+import { replaceMermaidFence } from "./files/markdownMermaidEditing";
 import { MarkdownMermaidCodeBlock } from "./chat/MarkdownMermaidCodeBlock";
 import { MarkdownTable } from "./chat/MarkdownTable";
 import { MarkdownDetails } from "./chat/MarkdownDetails";
@@ -1512,6 +1514,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
     return <MarkdownDetails open={detailsOpen}>{children}</MarkdownDetails>;
   },
   pre: function MarkdownPre({ node, children, ...props }) {
+    const mermaidEditing = use(MermaidEditingContext);
     const {
       resolvedTheme,
       diffThemeName,
@@ -1560,8 +1563,24 @@ const CHAT_MARKDOWN_COMPONENTS = {
       </RenderErrorBoundary>
     );
     if (language === "mermaid") {
+      const start = node?.position?.start.offset;
+      const end = node?.position?.end.offset;
+      const editable =
+        mermaidEditing &&
+        start !== undefined &&
+        end !== undefined &&
+        replaceMermaidFence(mermaidEditing.source, start, end, codeBlock.code) !== null;
       return (
         <MarkdownMermaidCodeBlock
+          editVersion={mermaidEditing?.source}
+          onSave={
+            editable && mermaidEditing.onChange
+              ? (code) => {
+                  const next = replaceMermaidFence(mermaidEditing.source, start!, end!, code);
+                  return next !== null && !!mermaidEditing.onChange?.(mermaidEditing.source, next);
+                }
+              : undefined
+          }
           code={codeBlock.code}
           fenceTitle={fenceTitle}
           theme={resolvedTheme}

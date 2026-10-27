@@ -10,6 +10,8 @@ import {
   type MarkdownPreviewTextEdit,
 } from "./markdownPreviewEditing";
 
+import { handlePreviewSaveShortcut } from "./previewSaveShortcut";
+
 const EditContext = createContext<(edit: MarkdownPreviewTextEdit | null, start: number) => void>(
   () => {},
 );
@@ -68,20 +70,23 @@ export function MarkdownPreviewEditor(props: {
   const [dirty, setDirty] = useState(false);
   const [saveRejected, setSaveRejected] = useState(false);
   const changedExternally = props.text !== original;
+  const canSave = dirty && !changedExternally && !props.readOnly;
+  const save = () => {
+    if (!canSave) return;
+    const saved = props.onSave(
+      original,
+      applyMarkdownPreviewTextEdits(original, [...edits.current.values()]),
+    );
+    setSaveRejected(!saved);
+  };
   return (
-    <>
+    <div
+      className="contents"
+      data-preview-save-editor
+      onKeyDownCapture={(event) => handlePreviewSaveShortcut(event, save)}
+    >
       <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-background px-6 py-2">
-        <Button
-          size="xs"
-          disabled={!dirty || changedExternally || props.readOnly}
-          onClick={() => {
-            const saved = props.onSave(
-              original,
-              applyMarkdownPreviewTextEdits(original, [...edits.current.values()]),
-            );
-            setSaveRejected(!saved);
-          }}
-        >
+        <Button size="xs" disabled={!canSave} onClick={save}>
           Save changes
         </Button>
         <Button size="xs" variant="ghost" onClick={props.onCancel}>
@@ -115,6 +120,6 @@ export function MarkdownPreviewEditor(props: {
           extraComponents={EDIT_COMPONENTS}
         />
       </EditContext>
-    </>
+    </div>
   );
 }

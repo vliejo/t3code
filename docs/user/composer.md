@@ -315,12 +315,13 @@ files show the copy that was attached to the message.
 ## Markdown file previews
 
 On web and desktop, open a workspace Markdown file and switch to its rendered view.
-Select text and choose **Add comment** to attach the corresponding source section to your
+Hover a section and choose its **+** button, or select text across sections and choose **+** to attach the corresponding source section to your
 message. You can remove the comment from the preview or composer before sending.
 
-For a writable file, choose **Edit text** to change rendered prose, link labels, or table cells,
-then **Save changes** or **Cancel**. Existing formatting and link destinations are preserved.
-Use source mode to change document structure, formatting, or code blocks.
+For a writable file, choose **Edit Markdown preview** (the pencil icon) to change rendered prose, link labels, or table cells,
+then **Save changes** or **Cancel**. Existing formatting and link destinations are preserved. Use source mode to change document structure, formatting, or other code blocks.
+
+In a Mermaid diagram, choose its **Show code** (`<>`) button to edit the source directly, then **Save changes** or **Cancel**. Mermaid blocks nested inside lists or quotes still use file source mode.
 
 ## Attached files
 

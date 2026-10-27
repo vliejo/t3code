@@ -6,10 +6,13 @@ import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { MarkdownCodeBlock } from "./MarkdownCodeBlock";
 import { findRevealRef, MarkdownFindContext } from "./markdownFindContext";
+import { MarkdownMermaidEditor } from "./MarkdownMermaidEditor";
 import { MermaidDiagram } from "./MermaidDiagram";
 
 export function MarkdownMermaidCodeBlock({
   code,
+  editVersion,
+  onSave,
   fenceTitle,
   theme,
   isStreaming,
@@ -17,6 +20,8 @@ export function MarkdownMermaidCodeBlock({
   children,
 }: {
   code: string;
+  editVersion?: string | undefined;
+  onSave?: ((code: string) => boolean) | undefined;
   fenceTitle: string | null;
   theme: "light" | "dark";
   isStreaming: boolean;
@@ -24,6 +29,7 @@ export function MarkdownMermaidCodeBlock({
   children: ReactNode;
 }) {
   const [showCode, setShowCode] = useState(false);
+  const [editing, setEditing] = useState(false);
   const searching = use(MarkdownFindContext);
   const revealSource = () => setShowCode(true);
   const sourceRevealRef = findRevealRef(revealSource);
@@ -47,7 +53,10 @@ export function MarkdownMermaidCodeBlock({
                   type="button"
                   variant="ghost-muted"
                   size="icon-xs"
-                  onClick={() => setShowCode((value) => !value)}
+                  onClick={() => {
+                    setEditing(!showCode && !!onSave);
+                    setShowCode((value) => !value);
+                  }}
                   aria-label={toggleLabel}
                 />
               }
@@ -76,6 +85,25 @@ export function MarkdownMermaidCodeBlock({
             </pre>
           ) : null}
         </RenderErrorBoundary>
+      ) : editing ? (
+        <MarkdownMermaidEditor
+          code={code}
+          version={editVersion ?? code}
+          onSave={
+            onSave
+              ? (next) => {
+                  if (!onSave(next)) return false;
+                  setEditing(false);
+                  setShowCode(false);
+                  return true;
+                }
+              : undefined
+          }
+          onCancel={() => {
+            setEditing(false);
+            setShowCode(false);
+          }}
+        />
       ) : (
         children
       )}
