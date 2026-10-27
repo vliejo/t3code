@@ -2,7 +2,15 @@ import type { ScopedThreadRef } from "@t3tools/contracts";
 import { resolvePathLinkTarget } from "@t3tools/shared/fileLinks";
 import { maskMarkdownFrontmatter } from "@t3tools/shared/markdownFrontmatter";
 import { Plus } from "lucide-react";
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import type { Components } from "react-markdown";
 
 import { MermaidEditingContext } from "../chat/MarkdownMermaidEditor";
@@ -63,6 +71,7 @@ const COMMENT_COMPONENTS = {
 } satisfies Components;
 
 export function FileMarkdownPreview(props: {
+  readonly rootRef?: RefObject<HTMLDivElement | null>;
   readonly editing: boolean;
   readonly onEditingChange: (editing: boolean) => void;
   readonly onTextChange?: ((original: string, text: string) => boolean) | undefined;
@@ -77,7 +86,8 @@ export function FileMarkdownPreview(props: {
     | undefined;
 }) {
   const { editing, onEditingChange } = props;
-  const rootRef = useRef<HTMLDivElement>(null);
+  const ownRootRef = useRef<HTMLDivElement>(null);
+  const rootRef = props.rootRef ?? ownRootRef;
   const targetKey =
     typeof props.composerDraftTarget === "string"
       ? props.composerDraftTarget
@@ -108,6 +118,7 @@ export function FileMarkdownPreview(props: {
   );
   const activeDraft =
     draft?.contents === props.text && draft.targetKey === targetKey ? draft : null;
+  // oxlint-disable-next-line t3code/react-effect-budget -- The document owns the text selection; React gets no event for it.
   useEffect(() => {
     const root = rootRef.current;
     if (!root || !targetKey || editing) return;
@@ -117,7 +128,7 @@ export function FileMarkdownPreview(props: {
     };
     document.addEventListener("selectionchange", update);
     return () => document.removeEventListener("selectionchange", update);
-  }, [props.text, targetKey, editing]);
+  }, [props.text, targetKey, editing, rootRef]);
 
   const lastSeparator = Math.max(
     props.relativePath.lastIndexOf("/"),

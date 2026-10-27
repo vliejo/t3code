@@ -323,6 +323,8 @@ then **Save changes** or **Cancel**. Existing formatting and link destinations a
 
 In a Mermaid diagram, choose its **Show code** (`<>`) button to edit the source directly, then **Save changes** or **Cancel**. Mermaid blocks nested inside lists or quotes still use file source mode.
 
+To export the rendered file, choose **Print or save as PDF** (the printer icon), then save a PDF from the print dialog. On macOS desktop, that option is under the dialog's **PDF** menu. Printouts always use the light theme, without comments or preview controls.
+
 ## Attached files
 
 Select a file chip in your draft or a sent message to preview it. Code and JSON use syntax

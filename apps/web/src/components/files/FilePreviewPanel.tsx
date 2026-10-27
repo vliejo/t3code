@@ -44,10 +44,10 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import { mediaFileReference } from "@t3tools/client-runtime/media-reference";
-import { FolderTree, Globe2, Pencil, WrapTextIcon } from "lucide-react";
+import { FolderTree, Globe2, Pencil, PrinterIcon, WrapTextIcon } from "lucide-react";
 import { Code2, Eye, Table2 } from "lucide";
 import * as Schema from "effect/Schema";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from "react";
 
 import { isBrowserPreviewFile, openFileInPreview } from "~/browser/openFileInPreview";
 import { useAssetUrlRefresh, useAssetUrlState } from "~/assets/assetUrls";
@@ -118,6 +118,7 @@ import {
   workspaceAssetResource,
 } from "./filePreviewMode";
 import { changeFileSaveSession, useFileSaveSession } from "./fileSaveSessions";
+import { printMarkdownPreview } from "./printMarkdownPreview";
 import { revisionedQuery } from "~/state/revisionedQuery";
 import {
   getOptimisticProjectFileQueryData,
@@ -901,6 +902,7 @@ function EditableFileSurface({
 }
 
 function RenderedMarkdownSurface({
+  previewRef,
   editing,
   onEditingChange,
   composerDraftTarget,
@@ -916,6 +918,7 @@ function RenderedMarkdownSurface({
   EditableFileSurfaceProps,
   "resolvedTheme" | "revealLine" | "revealRequestId" | "wordWrap" | "onPostRender"
 > & {
+  previewRef: RefObject<HTMLDivElement | null>;
   editing: boolean;
   onEditingChange: (editing: boolean) => void;
   threadRef: ScopedThreadRef;
@@ -928,6 +931,7 @@ function RenderedMarkdownSurface({
   return (
     <ScrollArea className="min-h-0 flex-1">
       <FileMarkdownPreview
+        rootRef={previewRef}
         editing={editing}
         onEditingChange={onEditingChange}
         composerDraftTarget={composerDraftTarget}
@@ -1102,6 +1106,8 @@ export default function FilePreviewPanel({
     null,
   );
   const breadcrumbRef = useRef<HTMLDivElement>(null);
+  const markdownPreviewRef = useRef<HTMLDivElement>(null);
+  const [printingMarkdown, setPrintingMarkdown] = useState(false);
   const isMarkdown = previewPath ? isMarkdownPreviewFile(previewPath) : false;
   const isMermaid = previewPath !== null && /\.(mmd|mermaid)$/i.test(previewPath);
   const [renderMermaidPreferred, setRenderMermaidPreferred] = useLocalStorage(
@@ -1235,6 +1241,24 @@ export default function FilePreviewPanel({
     })();
   };
 
+  const handlePrintMarkdown = () => {
+    const preview = markdownPreviewRef.current;
+    if (!preview || !relativePath) return;
+    setPrintingMarkdown(true);
+    const title = (relativePath.split(/[\\/]/).at(-1) ?? relativePath).replace(/\.[^.]+$/, "");
+    printMarkdownPreview(preview, title)
+      .catch((error: unknown) => {
+        toastManager.add(
+          stackedThreadToast({
+            type: "error",
+            title: "Unable to print Markdown",
+            description: error instanceof Error ? error.message : "An error occurred.",
+          }),
+        );
+      })
+      .finally(() => setPrintingMarkdown(false));
+  };
+
   if (attachment === undefined && !canReadFiles) {
     if (fileAccess.isPending) {
       return (
@@ -1322,6 +1346,19 @@ export default function FilePreviewPanel({
               onPress={() => setEditingMarkdown(true)}
             >
               <Pencil className="size-3.5" />
+            </FileSurfaceAction>
+          ) : null}
+          {attachment === undefined &&
+          isMarkdown &&
+          renderMarkdown &&
+          !editingMarkdown &&
+          file.data ? (
+            <FileSurfaceAction
+              label={printingMarkdown ? "Preparing to print…" : "Print or save as PDF"}
+              disabled={printingMarkdown}
+              onPress={handlePrintMarkdown}
+            >
+              <PrinterIcon className="size-3.5" />
             </FileSurfaceAction>
           ) : null}
           {showsRawText ? (
@@ -1502,6 +1539,7 @@ export default function FilePreviewPanel({
               </Suspense>
             ) : isMarkdown && renderMarkdown ? (
               <RenderedMarkdownSurface
+                previewRef={markdownPreviewRef}
                 editing={editingMarkdown}
                 onEditingChange={setEditingMarkdown}
                 key={relativePath}
